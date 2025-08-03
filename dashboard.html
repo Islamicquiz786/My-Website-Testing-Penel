@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial; max-width: 1200px; margin: auto; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    input, select, button, textarea { padding: 8px; margin: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+  <button id="signOutBtn">Sign Out</button>
+
+  <h2>Search / Filter Users</h2>
+  <input type="text" id="searchInput" placeholder="Search by username or email">
+  <select id="statusFilter">
+    <option value="">All</option>
+    <option value="New">New</option>
+    <option value="Pending">Pending</option>
+    <option value="Approved">Approved</option>
+  </select>
+
+  <h2>User List (<span id="pageNum">1</span>)</h2>
+  <table id="usersTable"><thead>
+    <tr><th>UID</th><th>Name</th><th>Email</th><th>Plan</th><th>Payment</th>
+    <th>Withdraw</th><th>Status</th><th>Device Info</th><th>Referral</th><th>Earnings</th><th>Actions</th></tr>
+  </thead><tbody></tbody></table>
+  <button id="prevPage">Prev</button>
+  <button id="nextPage">Next</button>
+
+  <h2>Withdrawal Requests</h2>
+  <table id="withdrawTable"><thead>
+    <tr><th>ReqID</th><th>UserID</th><th>Amount</th><th>Account#</th><th>Method</th><th>Status</th><th>Action</th></tr>
+  </thead><tbody></tbody></table>
+
+  <h2>Notifications</h2>
+  <form id="notifForm">
+    <input type="text" id="notifTitle" placeholder="Title" required>
+    <textarea id="notifMessage" placeholder="Message" required></textarea>
+    <input type="text" id="notifUserId" placeholder="UserID or blank for all">
+    <button type="submit">Send Notification</button>
+  </form>
+  <table id="notifTable"><thead><tr>
+    <th>To User</th><th>Title</th><th>Message</th><th>Time</th><th>Read</th>
+  </tr></thead><tbody></tbody></table>
+
+  <canvas id="quizChart" height="100"></canvas>
+
+  <script type="module" src="admin.js"></script>
+</body>
+    </html>
