@@ -1,55 +1,455 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: Arial; max-width: 1200px; margin: auto; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    input, select, button, textarea { padding: 8px; margin: 4px; }
+    :root {
+      --primary: #4e73df;
+      --danger: #e74a3b;
+      --success: #1cc88a;
+    }
+    body {
+      background-color: #f8f9fc;
+    }
+    .sidebar {
+      background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
+      min-height: 100vh;
+    }
+    .nav-link {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
+    .nav-link:hover {
+      color: white !important;
+    }
+    .card {
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    .badge-success {
+      background-color: var(--success);
+    }
+    .badge-danger {
+      background-color: var(--danger);
+    }
   </style>
 </head>
 <body>
-  <h1>Admin Dashboard</h1>
-  <button id="signOutBtn">Sign Out</button>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-3 col-lg-2 d-md-block sidebar collapse bg-gradient-primary">
+        <div class="position-sticky pt-3">
+          <div class="text-center mb-4">
+            <h4 class="text-white">Admin Panel</h4>
+          </div>
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link active" href="#dashboard">
+                <i class="fas fa-fw fa-tachometer-alt me-2"></i>Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#users">
+                <i class="fas fa-fw fa-users me-2"></i>User Management
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#withdrawals">
+                <i class="fas fa-fw fa-money-bill-wave me-2"></i>Withdrawals
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#notifications">
+                <i class="fas fa-fw fa-bell me-2"></i>Notifications
+              </a>
+            </li>
+            <li class="nav-item mt-4">
+              <button id="signOutBtn" class="btn btn-danger btn-sm w-100">
+                <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
 
-  <h2>Search / Filter Users</h2>
-  <input type="text" id="searchInput" placeholder="Search by username or email">
-  <select id="statusFilter">
-    <option value="">All</option>
-    <option value="New">New</option>
-    <option value="Pending">Pending</option>
-    <option value="Approved">Approved</option>
-  </select>
+      <!-- Main Content -->
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+        <!-- Dashboard Header -->
+        <div class="d-flex justify-content-between mb-4">
+          <h2>Admin Dashboard</h2>
+          <div id="currentDate" class="text-muted"></div>
+        </div>
 
-  <h2>User List (<span id="pageNum">1</span>)</h2>
-  <table id="usersTable"><thead>
-    <tr><th>UID</th><th>Name</th><th>Email</th><th>Plan</th><th>Payment</th>
-    <th>Withdraw</th><th>Status</th><th>Device Info</th><th>Referral</th><th>Earnings</th><th>Actions</th></tr>
-  </thead><tbody></tbody></table>
-  <button id="prevPage">Prev</button>
-  <button id="nextPage">Next</button>
+        <!-- User Search Section -->
+        <div class="card mb-4" id="users">
+          <div class="card-header bg-white">
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <h5 class="mb-0">User Management</h5>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group">
+                  <input type="text" id="userSearch" class="form-control" placeholder="Search by username or email">
+                  <button class="btn btn-primary" id="searchBtn">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>UID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Plan</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="userTableBody">
+                  <!-- Users will be loaded here dynamically -->
+                  <tr>
+                    <td colspan="7" class="text-center">Loading users...</td>
+                  </tr>
+                </tbody>
+              </table>
+              <nav>
+                <ul class="pagination justify-content-center">
+                  <li class="page-item disabled">
+                    <a class="page-link" href="#" id="prevPage">Previous</a>
+                  </li>
+                  <li class="page-item active">
+                    <a class="page-link" href="#">1</a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link" href="#" id="nextPage">Next</a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
 
-  <h2>Withdrawal Requests</h2>
-  <table id="withdrawTable"><thead>
-    <tr><th>ReqID</th><th>UserID</th><th>Amount</th><th>Account#</th><th>Method</th><th>Status</th><th>Action</th></tr>
-  </thead><tbody></tbody></table>
+        <!-- Withdrawal Requests Section -->
+        <div class="card mb-4" id="withdrawals">
+          <div class="card-header bg-white">
+            <h5>Withdrawal Requests</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>ReqID</th>
+                    <th>UserID</th>
+                    <th>Amount</th>
+                    <th>Account#</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="withdrawalTableBody">
+                  <tr>
+                    <td colspan="7" class="text-center">No withdrawal requests found</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-  <h2>Notifications</h2>
-  <form id="notifForm">
-    <input type="text" id="notifTitle" placeholder="Title" required>
-    <textarea id="notifMessage" placeholder="Message" required></textarea>
-    <input type="text" id="notifUserId" placeholder="UserID or blank for all">
-    <button type="submit">Send Notification</button>
-  </form>
-  <table id="notifTable"><thead><tr>
-    <th>To User</th><th>Title</th><th>Message</th><th>Time</th><th>Read</th>
-  </tr></thead><tbody></tbody></table>
+        <!-- Notifications Section -->
+        <div class="card" id="notifications">
+          <div class="card-header bg-white">
+            <h5>Send Notifications</h5>
+          </div>
+          <div class="card-body">
+            <form id="notificationForm">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">UserID (leave blank for all users)</label>
+                  <input type="text" id="targetUser" class="form-control" placeholder="Optional User ID">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Title</label>
+                  <input type="text" id="notificationTitle" class="form-control" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Message</label>
+                <textarea id="notificationMessage" class="form-control" rows="3" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane me-2"></i>Send Notification
+              </button>
+            </form>
 
-  <canvas id="quizChart" height="100"></canvas>
+            <hr class="my-4">
 
-  <script type="module" src="admin.js"></script>
+            <h6 class="mb-3">Recent Notifications</h6>
+            <div class="list-group" id="notificationList">
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                  <h6 class="mb-1">System Maintenance</h6>
+                  <small>2 hours ago</small>
+                </div>
+                <p class="mb-1">The system will be down for maintenance tonight at 2 AM</p>
+                <small>Sent to: All Users</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase & Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, query, where, getDocs, updateDoc, doc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBasuAzvAlaVAayEdDU9bB9wvUzG7fVuAg",
+      authDomain: "islamic-quiz-website.firebaseapp.com",
+      projectId: "islamic-quiz-website",
+      storageBucket: "islamic-quiz-website.appspot.com",
+      messagingSenderId: "517259698394",
+      appId: "1:517259698394:web:36094d03187da81685e3"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // DOM Elements
+    const signOutBtn = document.getElementById('signOutBtn');
+    const userTableBody = document.getElementById('userTableBody');
+    const withdrawalTableBody = document.getElementById('withdrawalTableBody');
+    const notificationForm = document.getElementById('notificationForm');
+    const notificationList = document.getElementById('notificationList');
+    const userSearch = document.getElementById('userSearch');
+    const currentDate = document.getElementById('currentDate');
+
+    // Current Date Display
+    currentDate.textContent = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+    });
+
+    // Sign Out Function
+    signOutBtn.addEventListener('click', () => {
+      signOut(auth).then(() => {
+        window.location.href = 'login.html';
+      }).catch((error) => {
+        alert('Sign out failed: ' + error.message);
+      });
+    });
+
+    // Load Users
+    async function loadUsers(searchTerm = '') {
+      try {
+        const usersRef = collection(db, 'users');
+        let q;
+        
+        if (searchTerm) {
+          q = query(usersRef, 
+            where('email', '>=', searchTerm),
+            where('email', '<=', searchTerm + '\uf8ff')
+          );
+        } else {
+          q = query(usersRef);
+        }
+
+        const querySnapshot = await getDocs(q);
+        userTableBody.innerHTML = '';
+
+        if (querySnapshot.empty) {
+          userTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No users found</td></tr>';
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          const statusClass = user.isActive ? 'badge-success' : 'badge-danger';
+          
+          userTableBody.innerHTML += `
+            <tr>
+              <td>${doc.id.substring(0, 8)}...</td>
+              <td>${user.name || 'N/A'}</td>
+              <td>${user.email}</td>
+              <td>${user.plan || 'Free'}</td>
+              <td>${user.paymentStatus || 'Pending'}</td>
+              <td><span class="badge ${statusClass}">${user.isActive ? 'Active' : 'Inactive'}</span></td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary me-2">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger">
+                  <i class="fas fa-ban"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (error) {
+        console.error("Error loading users: ", error);
+        userTableBody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading users</td></tr>';
+      }
+    }
+
+    // Load Withdrawals
+    async function loadWithdrawals() {
+      try {
+        const withdrawalsRef = collection(db, 'withdrawals');
+        const q = query(withdrawalsRef, where('status', '==', 'pending'));
+        const querySnapshot = await getDocs(q);
+
+        withdrawalTableBody.innerHTML = '';
+
+        if (querySnapshot.empty) {
+          withdrawalTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No pending withdrawals</td></tr>';
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const withdrawal = doc.data();
+          
+          withdrawalTableBody.innerHTML += `
+            <tr>
+              <td>${doc.id.substring(0, 6)}...</td>
+              <td>${withdrawal.userId.substring(0, 8)}...</td>
+              <td>$${withdrawal.amount}</td>
+              <td>${withdrawal.accountNumber}</td>
+              <td>${withdrawal.method}</td>
+              <td><span class="badge bg-warning">Pending</span></td>
+              <td>
+                <button class="btn btn-sm btn-success me-2 approve-btn" data-id="${doc.id}">
+                  <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-danger reject-btn" data-id="${doc.id}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+
+        // Add event listeners to buttons
+        document.querySelectorAll('.approve-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            await updateWithdrawalStatus(e.target.dataset.id, 'approved');
+          });
+        });
+
+        document.querySelectorAll('.reject-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            await updateWithdrawalStatus(e.target.dataset.id, 'rejected');
+          });
+        });
+      } catch (error) {
+        console.error("Error loading withdrawals: ", error);
+        withdrawalTableBody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading withdrawals</td></tr>';
+      }
+    }
+
+    // Update Withdrawal Status
+    async function updateWithdrawalStatus(id, status) {
+      try {
+        await updateDoc(doc(db, 'withdrawals', id), {
+          status: status,
+          processedAt: serverTimestamp()
+        };
+        alert(`Withdrawal ${status} successfully!`);
+        loadWithdrawals();
+      } catch (error) {
+        alert('Error updating withdrawal: ' + error.message);
+      }
+    }
+
+    // Send Notification
+    notificationForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const targetUser = document.getElementById('targetUser').value;
+      const title = document.getElementById('notificationTitle').value;
+      const message = document.getElementById('notificationMessage').value;
+
+      try {
+        await addDoc(collection(db, 'notifications'), {
+          title: title,
+          message: message,
+          userId: targetUser || 'all',
+          createdAt: serverTimestamp(),
+          read: false
+        });
+
+        alert('Notification sent successfully!');
+        notificationForm.reset();
+        loadNotifications();
+      } catch (error) {
+        alert('Error sending notification: ' + error.message);
+      }
+    });
+
+    // Load Notifications
+    async function loadNotifications() {
+      try {
+        const notificationsRef = collection(db, 'notifications');
+        const q = query(notificationsRef, orderBy('createdAt', 'desc'), limit(5));
+        const querySnapshot = await getDocs(q);
+
+        notificationList.innerHTML = '';
+
+        querySnapshot.forEach((doc) => {
+          const notification = doc.data();
+          const date = notification.createdAt?.toDate().toLocaleString() || 'Just now';
+          
+          notificationList.innerHTML += `
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between">
+                <h6 class="mb-1">${notification.title}</h6>
+                <small>${date}</small>
+              </div>
+              <p class="mb-1">${notification.message}</p>
+              <small>Sent to: ${notification.userId === 'all' ? 'All Users' : notification.userId.substring(0, 8) + '...'}</small>
+            </div>
+          `;
+        });
+      } catch (error) {
+        console.error("Error loading notifications: ", error);
+      }
+    }
+
+    // Search Users
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      loadUsers(userSearch.value);
+    });
+
+    // Check Auth State
+    onAuthStateChanged(auth, (user) => {
+      if (!user || user.uid !== "3we75n5JccPIakzzavWVcpYyW5f1") {
+        window.location.href = 'login.html';
+      } else {
+        // Load all data when authenticated
+        loadUsers();
+        loadWithdrawals();
+        loadNotifications();
+      }
+    });
+  </script>
 </body>
-    </html>
+  </html>
