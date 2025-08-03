@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Admin Login</title>
+<style>
+  body{font-family:Arial;max-width:400px;margin:auto;padding:20px;}
+  input,button{width:100%;padding:10px;margin:5px 0;}
+</style>
+</head>
+<body>
+  <h2>Admin Login</h2>
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="Admin Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Log In</button>
+  </form>
+  <p id="errorMsg" style="color:red;"></p>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey:"AIzaSyBasuAzvAlaVAayEdDU9bB9wvUzH7fVuAg",
+    authDomain:"islamic-quiz-website.firebaseapp.com",
+    projectId:"islamic-quiz-website",
+    storageBucket:"islamic-quiz-website.appspot.com",
+    messagingSenderId:"517259698394",
+    appId:"1:517259698394:web:36094d03187da81685e3"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  onAuthStateChanged(auth, user => {
+    if(user) location="admin.html";
+  });
+  document.getElementById("loginForm").addEventListener("submit", async e=>{
+    e.preventDefault();
+    try {
+      await signInWithEmailAndPassword(auth, email.value, password.value);
+    }catch(err){
+      errorMsg.innerText = err.message;
+    }
+  });
+</script>
+</body>
+</html>
