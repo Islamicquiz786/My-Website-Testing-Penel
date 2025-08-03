@@ -1,137 +1,304 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getFirestore, collection, onSnapshot, query, orderBy,
-  updateDoc, addDoc, limit, startAfter, getDocs, doc
+import { 
+  getAuth, 
+  signOut, 
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  updateDoc, 
+  doc, 
+  addDoc,
+  serverTimestamp,
+  orderBy,
+  limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import Chart from "https://cdn.jsdelivr.net/npm/chart.js";
 
+// Firebase Configuration
 const firebaseConfig = {
-  apiKey:"AIzaSyBasuAzvAlaVAayEdDU9bB9wvUzG7fVuAg",
-  authDomain:"islamic-quiz-website.firebaseapp.com",
-  projectId:"islamic-quiz-website",
-  storageBucket:"islamic-quiz-website.appspot.com",
-  messagingSenderId:"517259698394",
-  appId:"1:517259698394:web:36094d03187da81685e3"
+  apiKey: "AIzaSyBasuAzvAlaVAayEdDU9bB9wvUzG7fVuAg",
+  authDomain: "islamic-quiz-website.firebaseapp.com",
+  projectId: "islamic-quiz-website",
+  storageBucket: "islamic-quiz-website.appspot.com",
+  messagingSenderId: "517259698394",
+  appId: "1:517259698394:web:36094d03187da81685e3"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const ADMIN_UIDS = ["3we75n5JccPIakzzavWVcpYyW5f1"];
-let lastDoc=null, currentPage=1, pageSize=10;
 
-onAuthStateChanged(auth, user => {
-  if(!user || !ADMIN_UIDS.includes(user.uid)){
-    alert("صرف Admin کو اجازت ہے");
-    signOut(auth);
-    location="index.html";
-    return;
-  }
-  loadUsers();
-  loadWithdrawals();
-  loadNotifications();
+// DOM Elements
+const signOutBtn = document.getElementById('signOutBtn');
+const userTableBody = document.getElementById('userTableBody');
+const withdrawalTableBody = document.getElementById('withdrawalTableBody');
+const notificationForm = document.getElementById('notificationForm');
+const notificationList = document.getElementById('notificationList');
+const userSearch = document.getElementById('userSearch');
+const currentDate = document.getElementById('currentDate');
+const prevPageBtn = document.getElementById('prevPage');
+const nextPageBtn = document.getElementById('nextPage');
+
+// Current Date Display
+currentDate.textContent = new Date().toLocaleDateString('en-US', { 
+  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
 });
 
-signOutBtn.onclick = ()=>signOut(auth);
+// Pagination Variables
+let currentPage = 1;
+const usersPerPage = 10;
 
-async function loadUsers(forward=false){
-  const tbody=document.querySelector("#usersTable tbody");
-  const search=document.getElementById("searchInput").value.toLowerCase();
-  const filter=document.getElementById("statusFilter").value;
-  let usersQuery = query(collection(db,"users"), orderBy("createDate","desc"), limit(pageSize));
-  if(forward && lastDoc){
-    usersQuery = query(usersQuery, startAfter(lastDoc));
-  }
-  const snap = await getDocs(usersQuery);
-  tbody.innerHTML="";
-  snap.forEach((docSnap,i)=>{
-    const d=docSnap.data(), id=docSnap.id;
-    lastDoc = docSnap;
-    const status = d.approved ? "Approved" : (d.withdrawRequested ? "Pending" : "New");
-    if((!filter||filter===status) && (!search||(d.username||"").toLowerCase().includes(search)||(d.email||"").toLowerCase().includes(search))){
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${id}</td><td>${d.username||"—"}</td><td>${d.email||"—"}</td><td>${d.plan||"—"}</td>
-        <td>${d.paymentMethod||"—"}</td><td>${d.withdrawAmount||"—"}</td><td>${status}</td>
-        <td>${d.device?d.device.platform+" "+d.device.screenWidth+"x"+d.device.screenHeight:"—"}</td>
-        <td>${d.referralCode||""}/${d.referredBy||""}</td><td>${d.earnings||0}</td>
-        <td>
-          ${!d.approved? `<button data-id="${id}" class="approve">Approve</button>` : ""}
-          <button data-id="${id}" class="refuse">Refuse</button>
-          <button data-id="${id}" class="block">Block</button>
-        </td>`;
-      tbody.appendChild(tr);
+// Load Users with Pagination
+async function loadUsers(page = 1) {
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef);
+    const querySnapshot = await getDocs(q);
+    
+    const allUsers = [];
+    querySnapshot.forEach((doc) => {
+      allUsers.push({ id: doc.id, ...doc.data() });
+    });
+
+    const totalPages = Math.ceil(allUsers.length / usersPerPage);
+    const startIndex = (page - 1) * usersPerPage;
+    const paginatedUsers = allUsers.slice(startIndex, startIndex + usersPerPage);
+
+    userTableBody.innerHTML = '';
+
+    if (paginatedUsers.length === 0) {
+      userTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No users found</td></tr>';
+      return;
     }
-  });
-  document.getElementById("pageNum").innerText = currentPage;
-  document.getElementById("nextPage").onclick = ()=>{ currentPage++; loadUsers(true); };
+
+    paginatedUsers.forEach((user) => {
+      const statusClass = user.isApproved ? 'bg-success' : 'bg-warning';
+      const statusText = user.isApproved ? 'Approved' : 'Pending';
+      
+      userTableBody.innerHTML += `
+        <tr>
+          <td>${user.id.substring(0, 8)}...</td>
+          <td>${user.name || 'N/A'}</td>
+          <td>${user.email}</td>
+          <td>${user.plan || 'Free'}</td>
+          <td>${user.paymentStatus || 'Pending'}</td>
+          <td><span class="badge ${statusClass}">${statusText}</span></td>
+          <td>
+            ${!user.isApproved ? `
+              <button class="btn btn-sm btn-success me-2" onclick="approveUser('${user.id}')">
+                <i class="fas fa-check"></i> Approve
+              </button>
+            ` : ''}
+            <button class="btn btn-sm btn-danger" onclick="banUser('${user.id}')">
+              <i class="fas fa-ban"></i> Ban
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    // Update pagination buttons
+    prevPageBtn.classList.toggle('disabled', page === 1);
+    nextPageBtn.classList.toggle('disabled', page >= totalPages);
+
+    currentPage = page;
+  } catch (error) {
+    console.error("Error loading users: ", error);
+    userTableBody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading users</td></tr>';
+  }
 }
 
-document.getElementById("searchInput").oninput = ()=>loadUsers();
-document.getElementById("statusFilter").onchange = ()=>loadUsers();
+// Load Withdrawals
+async function loadWithdrawals() {
+  try {
+    const withdrawalsRef = collection(db, 'withdrawals');
+    const q = query(withdrawalsRef, where('status', '==', 'pending'));
+    const querySnapshot = await getDocs(q);
 
-document.querySelector("#usersTable").addEventListener("click", e => {
-  if(e.target.matches(".approve")) updateUser(e.target.dataset.id,true);
-  if(e.target.matches(".refuse")) updateUser(e.target.dataset.id,false);
-  if(e.target.matches(".block")) updateUser(e.target.dataset.id,false,true);
+    withdrawalTableBody.innerHTML = '';
+
+    if (querySnapshot.empty) {
+      withdrawalTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No pending withdrawals</td></tr>';
+      return;
+    }
+
+    querySnapshot.forEach((doc) => {
+      const withdrawal = doc.data();
+      
+      withdrawalTableBody.innerHTML += `
+        <tr>
+          <td>${doc.id.substring(0, 6)}...</td>
+          <td>${withdrawal.userId.substring(0, 8)}...</td>
+          <td>$${withdrawal.amount}</td>
+          <td>${withdrawal.accountNumber}</td>
+          <td>${withdrawal.method}</td>
+          <td><span class="badge bg-warning">Pending</span></td>
+          <td>
+            <button class="btn btn-sm btn-success me-2 approve-btn" data-id="${doc.id}">
+              <i class="fas fa-check"></i> Approve
+            </button>
+            <button class="btn btn-sm btn-danger reject-btn" data-id="${doc.id}">
+              <i class="fas fa-times"></i> Reject
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    // Add event listeners to buttons
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        await updateWithdrawalStatus(e.target.dataset.id, 'approved');
+      });
+    });
+
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        await updateWithdrawalStatus(e.target.dataset.id, 'rejected');
+      });
+    });
+  } catch (error) {
+    console.error("Error loading withdrawals: ", error);
+    withdrawalTableBody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading withdrawals</td></tr>';
+  }
+}
+
+// Update Withdrawal Status
+async function updateWithdrawalStatus(id, status) {
+  try {
+    await updateDoc(doc(db, 'withdrawals', id), {
+      status: status,
+      processedAt: serverTimestamp()
+    });
+    alert(`Withdrawal ${status} successfully!`);
+    loadWithdrawals();
+  } catch (error) {
+    alert('Error updating withdrawal: ' + error.message);
+  }
+}
+
+// Send Notification
+notificationForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const targetUser = document.getElementById('targetUser').value;
+  const title = document.getElementById('notificationTitle').value;
+  const message = document.getElementById('notificationMessage').value;
+
+  try {
+    await addDoc(collection(db, 'notifications'), {
+      title: title,
+      message: message,
+      userId: targetUser || 'all',
+      createdAt: serverTimestamp(),
+      read: false
+    });
+
+    alert('Notification sent successfully!');
+    notificationForm.reset();
+    loadNotifications();
+  } catch (error) {
+    alert('Error sending notification: ' + error.message);
+  }
 });
 
-async function updateUser(id,approve,block=false){
-  const upd = { approved: !!approve };
-  if(block) upd.withdrawRequested = false;
-  await updateDoc(doc(db,"users",id), upd);
+// Load Notifications
+async function loadNotifications() {
+  try {
+    const notificationsRef = collection(db, 'notifications');
+    const q = query(notificationsRef, orderBy('createdAt', 'desc'), limit(5));
+    const querySnapshot = await getDocs(q);
+
+    notificationList.innerHTML = '';
+
+    querySnapshot.forEach((doc) => {
+      const notification = doc.data();
+      const date = notification.createdAt?.toDate().toLocaleString() || 'Just now';
+      
+      notificationList.innerHTML += `
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between">
+            <h6 class="mb-1">${notification.title}</h6>
+            <small>${date}</small>
+          </div>
+          <p class="mb-1">${notification.message}</p>
+          <small>Sent to: ${notification.userId === 'all' ? 'All Users' : notification.userId.substring(0, 8) + '...'}</small>
+        </div>
+      `;
+    });
+  } catch (error) {
+    console.error("Error loading notifications: ", error);
+  }
 }
 
-function loadWithdrawals(){
-  const tbody = document.querySelector("#withdrawTable tbody");
-  onSnapshot(collection(db,"withdrawRequests"), snap=>{
-    tbody.innerHTML = "";
-    snap.forEach(r=>{
-      const d=r.data(), rid=r.id;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${rid}</td><td>${d.userId}</td><td>${d.amount}</td>
-        <td>${d.accountNumber}</td><td>${d.method}</td><td>${d.status}</td>
-        <td>${d.status==="pending"? `<button data-id="${rid}" class="approveW">Approve</button>`:""}</td>`;
-      tbody.appendChild(tr);
+// Approve User
+window.approveUser = async (userId) => {
+  try {
+    await updateDoc(doc(db, 'users', userId), {
+      isApproved: true,
+      approvedAt: serverTimestamp()
     });
-    tbody.querySelectorAll(".approveW").forEach(btn =>
-      updateDoc(doc(db,"withdrawRequests",btn.dataset.id),{ status:"approved" })
-    );
+    alert('User approved successfully!');
+    loadUsers(currentPage);
+  } catch (error) {
+    alert('Error approving user: ' + error.message);
+  }
+};
+
+// Ban User
+window.banUser = async (userId) => {
+  if (confirm('Are you sure you want to ban this user?')) {
+    try {
+      await updateDoc(doc(db, 'users', userId), {
+        isBanned: true,
+        bannedAt: serverTimestamp()
+      });
+      alert('User banned successfully!');
+      loadUsers(currentPage);
+    } catch (error) {
+      alert('Error banning user: ' + error.message);
+    }
+  }
+};
+
+// Pagination Controls
+prevPageBtn.addEventListener('click', () => {
+  if (currentPage > 1) {
+    loadUsers(currentPage - 1);
+  }
+});
+
+nextPageBtn.addEventListener('click', () => {
+  loadUsers(currentPage + 1);
+});
+
+// Sign Out Function
+signOutBtn.addEventListener('click', () => {
+  signOut(auth).then(() => {
+    window.location.href = 'login.html';
+  }).catch((error) => {
+    alert('Sign out failed: ' + error.message);
   });
-}
+});
 
-function loadNotifications(){
-  const form = document.getElementById("notifForm");
-  const table = document.querySelector("#notifTable tbody");
-  form.onsubmit = async e=>{
-    e.preventDefault();
-    await addDoc(collection(db,"notifications"),{
-      userId: form.notifUserId.value||null,
-      title: form.notifTitle.value,
-      message: form.notifMessage.value,
-      sentAt: new Date(),
-      read:false
-    });
-    alert("Notification sent"); form.reset();
-  };
-  onSnapshot(collection(db,"notifications"), snap=>{
-    table.innerHTML = "";
-    snap.forEach(n=>{
-      const d=n.data();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${d.userId||"All"}</td><td>${d.title}</td><td>${d.message}</td>
-        <td>${d.sentAt.toDate().toLocaleString()}</td><td>${d.read}</td>`;
-      table.appendChild(tr);
-    });
-  });
-}
+// Search Users
+document.getElementById('searchBtn').addEventListener('click', () => {
+  loadUsers(1); // Reset to first page when searching
+});
 
-onSnapshot(collection(db,"users"), snap=>{
-  const planCounts = {};
-  snap.forEach(u=>{ planCounts[u.data().plan] = (planCounts[u.data().plan] || 0) + 1; });
-  const labels = Object.keys(planCounts), data = Object.values(planCounts);
-  const ctx = document.getElementById("quizChart").getContext("2d");
-  new Chart(ctx,{ type:"bar", data:{ labels, datasets:[{ label:"Users per plan", data }] } });
+// Check Auth State
+onAuthStateChanged(auth, (user) => {
+  if (!user || user.uid !== "3we75n5JccPIakzzavWVcpYyW5f1") {
+    window.location.href = 'login.html';
+  } else {
+    // Load all data when authenticated
+    loadUsers();
+    loadWithdrawals();
+    loadNotifications();
+  }
 });
