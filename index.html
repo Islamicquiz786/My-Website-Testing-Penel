@@ -22,20 +22,20 @@
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBasuAzvAlaVAayEdDU9bB9wvUzH7fVuAg",
+      apiKey: "AIzaSyBasuAzvAlaVAayEdDUd9bB9wvUzG7fVuAg",
       authDomain: "islamic-quiz-website.firebaseapp.com",
       databaseURL: "https://islamic-quiz-website-default-rtdb.firebaseio.com",
       projectId: "islamic-quiz-website",
       storageBucket: "islamic-quiz-website.appspot.com",
       messagingSenderId: "517259698394",
-      appId: "1:517259698394:web:36094d03187da81685e3"
+      appId: "1:517259698394:web:36094d8d03187da81685e3"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
     onAuthStateChanged(auth, user => {
-      if (user) location = "admin.html";
+      if (user) location = "admin.html"; // Change this if your admin page is at a different URL
     });
 
     document.getElementById("loginForm").addEventListener("submit", async e => {
