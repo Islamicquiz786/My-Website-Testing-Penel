@@ -1,19 +1,254 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Admin Login</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Admin Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <style>
+    :root {
+      --primary: #00c9a7;
+      --secondary: #845ec2;
+      --error: #ff6b6b;
+      --text: #fefefe;
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                  url('https://github.com/Islamicquiz786/Sahil-Images-/raw/main/were%20i%20want%20to%20be.jpeg') no-repeat center;
+      background-size: cover;
+      overflow: hidden;
+    }
+
+    /* Floating Particles Effect */
+    .particles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      filter: blur(2px);
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(-100vh) rotate(360deg); }
+    }
+
+    /* Glassmorphism Card */
+    .wrapper {
+      position: relative;
+      width: 380px;
+      padding: 40px;
+      background: var(--glass);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      z-index: 10;
+      animation: floatCard 6s ease-in-out infinite;
+    }
+
+    @keyframes floatCard {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    /* Neon Border Animation */
+    .wrapper::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(0deg, transparent,
+                var(--primary), var(--primary));
+      animation: rotate 6s linear infinite;
+      z-index: -2;
+      transform-origin: center;
+    }
+
+    .wrapper::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      background: var(--glass);
+      border-radius: 14px;
+      z-index: -1;
+    }
+
+    @keyframes rotate {
+      0% { transform: rotate(0deg); filter: hue-rotate(0deg); }
+      100% { transform: rotate(360deg); filter: hue-rotate(360deg); }
+    }
+
+    h2 {
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 25px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 15px 15px 15px 45px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 16px;
+      outline: none;
+      transition: 0.5s;
+      border-left: 2px solid transparent;
+    }
+
+    .input-group input:focus {
+      border-left: 2px solid var(--primary);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 10px rgba(0, 201, 167, 0.3);
+    }
+
+    .input-group input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .input-group .icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text);
+      font-size: 1.3em;
+      transition: 0.3s;
+    }
+
+    .input-group input:focus ~ .icon {
+      color: var(--primary);
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      color: #111;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.4s;
+      margin-top: 20px;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 201, 167, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: 0.5s;
+      z-index: -1;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .firebase-error {
+      color: var(--error);
+      text-align: center;
+      margin: 15px 0;
+      font-size: 14px;
+      animation: shake 0.5s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 480px) {
+      .wrapper {
+        width: 90%;
+        padding: 30px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Admin Login</h1>
-  <input type="email" id="email" placeholder="Email"><br>
-  <input type="password" id="password" placeholder="Password"><br>
-  <button id="loginBtn">Login</button>
+  <!-- Floating Particles -->
+  <div class="particles" id="particles"></div>
 
+  <!-- Login Form -->
+  <div class="wrapper">
+    <form id="loginForm">
+      <h2>Admin Portal</h2>
+      <div class="input-group">
+        <span class="icon"><ion-icon name="mail-outline"></ion-icon></span>
+        <input type="email" id="email" placeholder="Admin Email" required>
+      </div>
+      <div class="input-group">
+        <span class="icon"><ion-icon name="lock-closed-outline"></ion-icon></span>
+        <input type="password" id="password" placeholder="Password" required>
+      </div>
+      <button type="submit" class="btn">Access Dashboard</button>
+      <div class="firebase-error" id="firebaseError"></div>
+    </form>
+  </div>
+
+  <!-- Firebase Auth Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyBasuAzvAlaVAayEdDU9bB9wvUzG7fVuAg",
       authDomain: "islamic-quiz-website.firebaseapp.com",
@@ -23,24 +258,90 @@
       appId: "1:517259698394:web:36094d03187da81685e3"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    document.getElementById("loginBtn").onclick = async () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+    // DOM Elements
+    const form = document.getElementById("loginForm");
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const errorDiv = document.getElementById("firebaseError");
+    const particlesContainer = document.getElementById("particles");
+
+    // Create Floating Particles
+    function createParticles() {
+      const count = 30;
+      for (let i = 0; i < count; i++) {
+        const particle = document.createElement("div");
+        particle.classList.add("particle");
+        
+        // Random properties
+        const size = Math.random() * 10 + 5;
+        const posX = Math.random() * window.innerWidth;
+        const posY = Math.random() * window.innerHeight;
+        const duration = Math.random() * 20 + 10;
+        const delay = Math.random() * -20;
+        
+        // Apply styles
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${posX}px`;
+        particle.style.top = `${posY}px`;
+        particle.style.animationDuration = `${duration}s`;
+        particle.style.animationDelay = `${delay}s`;
+        
+        particlesContainer.appendChild(particle);
+      }
+    }
+
+    // Handle Form Submission
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorDiv.textContent = "";
+
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
         const user = userCredential.user;
+        
         if (user.uid === "3we75n5JccPIakzzavWVcpYyW5f1") {
-          window.location.href = "dashboard.html";
+          // Add loading effect before redirect
+          form.classList.add("loading");
+          setTimeout(() => {
+            window.location.href = "dashboard.html";
+          }, 1500);
         } else {
-          alert("آپ کو اس ایریا میں جانے کی اجازت نہیں ہے!");
+          await auth.signOut();
+          showError("Access Denied: Admin Only");
         }
       } catch (error) {
-        alert("Login Failed: " + error.message);
+        let errorMessage = "Authentication Failed";
+        switch (error.code) {
+          case "auth/user-not-found":
+            errorMessage = "Account Not Found";
+            break;
+          case "auth/wrong-password":
+            errorMessage = "Incorrect Password";
+            break;
+          case "auth/too-many-requests":
+            errorMessage = "Temporarily Locked (Too Many Attempts)";
+            break;
+        }
+        showError(errorMessage);
       }
-    };
+    });
+
+    // Show Error Animation
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.style.display = "block";
+      setTimeout(() => {
+        errorDiv.style.display = "none";
+      }, 3000);
+    }
+
+    // Initialize
+    createParticles();
   </script>
 </body>
 </html>
